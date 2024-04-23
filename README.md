@@ -14,10 +14,10 @@ document.addEventListener('keydown', function(event) {
             this.closest('.modal').style.display = 'none';
         });
     });
-'''
+
 //------------------------ 메타마스크 연동 ---------------------
 document.getElementById('registerBtn').addEventListener('click', function() {
     // 회원가입 모달 표시 로직 추가
     document.getElementById('registerModal').style.display = 'block';
 });
-'''
+
