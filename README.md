@@ -7,21 +7,12 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-    // 메타마스크 연동 이벤트 리스너 수정
-    connectWalletButton.addEventListener('click', async () => {
-        if (window.ethereum) {
-            try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                console.log('Connected accounts:', accounts);
-                // 이후 로직에 사용자 계정 정보 활용
-            } catch (error) {
-                console.error('Error connecting to MetaMask:', error);
-            }
-        } else {
-            console.log('Ethereum object not found; make sure MetaMask is installed.');
-            alert('MetaMask is not installed or not enabled.');
-        }
-    });
+       // 상품 상세 모달 표시 함수
+    function showModal(product) {
+        modal.style.display = "block";
+        modalBody.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>Price: $${product.price}</p>`;
+    }
+
 
 //------------------------ 메타마스크 연동 ---------------------
 document.getElementById('registerBtn').addEventListener('click', function() {
