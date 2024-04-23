@@ -6,21 +6,11 @@ document.addEventListener('keydown', function(event) {
         modal.style.display = 'none';
     }
 });
-
-    // Escape 키를 이용한 모달 닫기
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            if (modal.style.display === 'block') {
-                modal.style.display = 'none';
-            }
-            if (registerModal && registerModal.style.display === 'block') {
-                registerModal.style.display = 'none';
-            }
-        }
-    });
-
-
-
+// 상품 상세 모달 표시 함수
+    function showModal(product) {
+        modal.style.display = "block";
+        modalBody.innerHTML = `<h2>${product.name}</h2><p>${product.description}</p><p>Price: $${product.price}</p>`;
+    }
 //------------------------ 메타마스크 연동 ---------------------
 document.getElementById('registerBtn').addEventListener('click', function() {
     // 회원가입 모달 표시 로직 추가
