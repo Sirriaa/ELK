@@ -7,12 +7,18 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-  // 상품 카테고리 변경 이벤트
-    categorySelect.addEventListener('change', function() {
-        const category = this.value;
-        const filteredProducts = products.filter(product => product.category === category);
-        displayProducts(filteredProducts);
+    // Escape 키를 이용한 모달 닫기
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+            if (registerModal && registerModal.style.display === 'block') {
+                registerModal.style.display = 'none';
+            }
+        }
     });
+
 
 
 //------------------------ 메타마스크 연동 ---------------------
