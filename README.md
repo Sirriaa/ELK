@@ -7,13 +7,13 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-    // 모달 닫기 버튼에 대한 참조 가져오기 및 이벤트 리스너 추가
-    const closeButtons = document.querySelectorAll('.close-button');
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            this.closest('.modal').style.display = 'none';
-        });
+  // 상품 카테고리 변경 이벤트
+    categorySelect.addEventListener('change', function() {
+        const category = this.value;
+        const filteredProducts = products.filter(product => product.category === category);
+        displayProducts(filteredProducts);
     });
+
 
 //------------------------ 메타마스크 연동 ---------------------
 document.getElementById('registerBtn').addEventListener('click', function() {
