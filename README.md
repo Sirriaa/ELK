@@ -14,6 +14,7 @@ document.addEventListener('keydown', function(event) {
             this.closest('.modal').style.display = 'none';
         });
     });
+console.log('Hello, world!');
 
 //------------------------ 메타마스크 연동 ---------------------
 document.getElementById('registerBtn').addEventListener('click', function() {
