@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Transaction & Delivery Tracking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .container {
+            flex: 1;
+            margin: 20px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .transaction-details p {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .transaction-details span {
+            font-weight: bold;
+            color: #000;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Coin Transaction</h1>
+        <div class="transaction-details">
+            <p><strong>Buyer:</strong> <span id="buyer-address"></span></p>
+            <p><strong>Seller:</strong> <span id="seller-address"></span></p>
+            <p><strong>Amount:</strong> <span id="transaction-amount"></span> FRC</p>
+        </div>
+        <button id="deposit-button">Deposit to Escrow</button>
+        <button id="confirm-order-button" disabled onclick="checkOrderStatus()">Order Confirm</button>
+        <button id="confirm-delivery-button" disabled>Send to seller</button>
+    </div>
+       
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script>
+        let escrowFactoryContract; // 전역 변수로 선언
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                window.web3 = new Web3(window.ethereum);
+            } else {
+                alert('MetaMask is not installed or not enabled.');
+                throw new Error('MetaMask is not installed or not enabled.');
+            }
+
+            const productId = new URLSearchParams(window.location.search).get('productId');
+            if (!productId) {
+                console.error('Product ID is missing.');
+                alert('Product ID is missing.');
+                return;
+            }
+
+            let buyerAddress = '';
+            let sellerAddress = '';
+            let transactionAmount = 0;
+
+            try {
+                const walletResponse = await fetch('/get-wallet-address');
+                const walletData = await walletResponse.json();
+
+                const productResponse = await fetch(`/get-product-details?productId=${productId}`);
+                const productData = await productResponse.json();
+
+                buyerAddress = walletData.walletAddress; 
+                sellerAddress = productData.wallet_address; 
+
+                document.getElementById('buyer-address').textContent = buyerAddress || 'Buyer information not available';
+                document.getElementById('seller-address').textContent = sellerAddress || 'Seller information not available';
+
+                if (productData.price) {
+                    transactionAmount = Math.floor(parseFloat(productData.price) / 1000); 
+                    document.getElementById('transaction-amount').textContent = `${transactionAmount} coins`;
+                } else {
+                    document.getElementById('transaction-amount').textContent = 'Transaction amount not specified';
+                }
+            } catch (error) {
+                console.error('Error fetching product details:', error);
+                alert('Error fetching product details: ' + error.message);
+            }
+
+            const escrowFactoryAddress = '0xFc3764Ec0Ca590A51a157D25A4614489f9F643a8';
+            const escrowFactoryAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_seller",
+				"type": "address"
+			}
+		],
+		"name": "createEscrow",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_token",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "escrowAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "buyer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "seller",
+				"type": "address"
+			}
+		],
+		"name": "EscrowCreated",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "escrows",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "getEscrowAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getEscrows",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "token",
+		"outputs": [
+			{
+				"internalType": "contract FreshCoin",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]; 
+
+            escrowFactoryContract = new web3.eth.Contract(escrowFactoryAbi, escrowFactoryAddress); // 초기화
+            console.log("Contract initialized:", escrowFactoryContract);
+
+            document.getElementById('deposit-button').addEventListener('click', async () => {
+    console.log("Deposit button clicked");
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const account = accounts[0];
+    console.log("Accounts received:", accounts);
+
+    try {
+        const walletResponse = await fetch('/get-wallet-address');
+        const walletData = await walletResponse.json();
+        const buyerAddress = walletData.walletAddress;
+        console.log("Buyer wallet address:", buyerAddress);
+
+        const productResponse = await fetch(`/get-product-details?productId=${productId}`);
+        const productData = await productResponse.json();
+        const sellerAddress = productData.wallet_address;
+        console.log("Seller wallet address:", sellerAddress);
+
+        const transactionAmount = Math.floor(parseFloat(productData.price) / 1000); // 가격을 코인 단위로 변환
+        console.log("Transaction details:", transactionAmount);
+        const checksumAddress = web3.utils.toChecksumAddress('0x05aa7e1a89db8df1668cb94565b3a3fb9275673e');
+
+        console.log("Calling createEscrow with:", buyerAddress, sellerAddress, "from account", account);
+        escrowFactoryContract.methods.createEscrow(buyerAddress, sellerAddress).send({
+            from: account,
+            value: web3.utils.toWei(transactionAmount.toString(), 'ether'), 
+            gas: 3000000,
+            gasPrice: web3.utils.toWei('10', 'gwei')
+        })
+        .on('receipt', (receipt) => {
+            console.log("Transaction receipt:", receipt);
+            document.getElementById('confirm-order-button').disabled = false;
+            alert('Escrow created and deposit successful.');
+        })
+        .on('error', (error) => {
+            console.error("Transaction error:", error);
+            alert('Deposit failed. ' + error.message);
+        });
+    } catch (error) {
+        console.error('Error fetching wallet or product details:', error);
+        alert('Error processing your transaction: ' + error.message);
+    }
+
+
+});
+
+document.getElementById('confirm-order-button').addEventListener('click', async() => {
+ // Confirm Order button activation based on the order status
+
+
+    const productId = getProductIdFromUrl();
+    
+    try {
+        let response = await fetch(`/api/check-order-status?productId=${productId}`);
+        let data = await response.json();
+
+        if (data.orderPlaced) {
+            alert('주문이 확인되었습니다.');
+            document.getElementById('confirm-delivery-button').disabled = false; // 버튼 활성화
+            window.open('delivery.html', '_blank'); // 새 탭에서 delivery.html 열기
+        } else {
+            response = await fetch('/api/confirm-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ orderId: productId })
+            });
+            data = await response.json();
+            
+            if (data.success) {
+                alert('Order confirmed successfully');
+                document.getElementById('confirm-delivery-button').disabled = false; // 배송 확인 버튼 활성화
+                window.open('delivery.html', '_blank'); // 새 탭에서 delivery.html 열기
+            } else {
+                alert('Failed to confirm order');
+                document.getElementById('confirm-delivery-button').disabled = true; // 버튼 비활성화 유지
+            }
+        }
+    } catch (error) {
+        console.error('Error checking order status:', error);
+        alert('주문 상태 확인 중 오류가 발생했습니다.');
+        document.getElementById('confirm-delivery-button').disabled = true; // 오류 시 버튼 비활성화
+    }
+});
+
+
+   
+
+
+
+function getProductIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('productId');
+}
+
+
+
+
+function getProductIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('productId');
+}
+        });
+
+
+
+document.getElementById('confirm-delivery-button').addEventListener('click', async () => {
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const account = accounts[0];
+    const escrowIndex = 0; 
+    // Escrow 계약의 ABI를 정의하고 사용해야 합니다.
+    const EscrowAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_buyer",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_seller",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_arbiter",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_token",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "amount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "arbiter",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "buyer",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "confirmDelivery",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "currentState",
+		"outputs": [
+			{
+				"internalType": "enum Escrow.State",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_amount",
+				"type": "uint256"
+			}
+		],
+		"name": "deposit",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "refundBuyer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "seller",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "token",
+		"outputs": [
+			{
+				"internalType": "contract FreshCoin",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "triggerDeliveryConfirmation",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+]
+
+    try {
+        const escrowAddress = await escrowFactoryContract.methods.getEscrowAddress(escrowIndex).call();
+        const escrowContract = new web3.eth.Contract(EscrowAbi, escrowAddress);
+        
+		escrowContract.methods.confirmDelivery().send({
+            from: account,
+            gas: 3000000,
+            gasPrice: web3.utils.toWei('10', 'gwei')
+        })
+        .on('receipt', (receipt) => {
+            alert('Delivery confirmed and funds released to seller.');
+        })
+        .on('error', (error) => {
+            console.error('Confirmation failed:', error);
+            alert('Confirmation failed: ' + error.message);
+        });
+    } catch (error) {
+        console.error('Error confirming delivery:', error);
+        alert('Error confirming delivery: ' + error.message);
+    }
+});
+
+//-------------------------------------------------------------------------
+    </script>       
+
+</body>
+</html>
