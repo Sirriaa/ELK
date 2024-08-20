@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Used Goods Marketplace</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <div class="top-nav">
+                <a href="#" class="logo">Advanced Used Goods Marketplace</a>
+                <nav class="user-auth">
+                    <!-- "mypage" 버튼 추가 -->
+                    <button class="btn btn-primary" id="mypageBtn">Mypage</button>
+                    <button class="btn btn-secondary" id="registerBtn">Register</button>
+                    <a href="profile.html"><img src="default-profile.png" alt="Profile Image" id="profileImage" class="profile-pic"></a>
+
+
+                </nav>
+            </div>
+            <nav class="main-nav">
+                <ul class="nav-list">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Categories</a></li>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+               
+                <div class="search-area">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search for products...">
+                    <button id="searchButton" class="btn btn-search">Search</button>
+                </div>
+            </nav>
+        </header>
+        <main class="main-content">
+            <section class="featured-products">
+                <h2>Featured Products</h2>
+                <div id="product-list" class="product-grid"></div>
+            </section>
+            <aside class="sidebar">
+                <h3>Categories</h3>
+                <ul class="category-list">
+                    <li><a href="#">Electronics</a></li>
+                    <li><a href="#">Furniture</a></li>
+                    <li><a href="#">Toys</a></li>
+                    <li><a href="#">Books</a></li>
+                </ul>
+            </aside>
+        </main>
+        <footer class="footer">
+            <p>© 2024 Advanced Marketplace</p>
+            <ul class="footer-links">
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Use</a></li>
+            </ul>
+        </footer>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Register</h2>
+            <button id="connectWalletButton" class="btn">Connect Wallet</button>
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="text" id="address" placeholder="Shipping Address" required>
+            <button type="button" id="addressSearch">주소 검색</button>
+            <input type="text" id="detailAddress" placeholder="상세주소" required>
+            <input type="text" id="phone" placeholder="Phone Number" required>
+            <button type="button" id="loginButton" class="btn">Login</button>
+            <div id="walletBalance">Wallet Balance: N/A</div>
+        </div>
+    </div>
+   <!-- 상품 상세 정보를 표시할 모달 -->
+   <div id="productModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div id="product-modal-body" class="modal-body"></div>
+        <button id="request-transaction" class="btn btn-primary">거래요청하기</button>
+    </div>
+</div>
+<div id="posts-container">
+    <!-- 게시글은 서버로부터 동적으로 로드되어 여기에 표시됩니다. -->
+</div>
+    <script src="app.js"></script>
+</body>
+</html>
