@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Create Order</title>
+    <style>
+        body, html {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button, textarea {
+            padding: 10px;
+            width: calc(100% - 22px);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin-top: 20px;
+        }
+        .readonly-field {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 10px;
+            width: calc(100% - 22px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Order</h1>
+        <form id="orderForm">
+            <div class="input-group">
+                <label for="customerName">받으실 분:</label>
+                <div id="customerName" class="readonly-field"></div>
+            </div>
+            <div class="input-group">
+                <label for="customerPhone">휴대폰 번호:</label>
+                <div id="customerPhone" class="readonly-field"></div>
+            </div>
+            <div class="input-group">
+                <label for="deliveryAddress">배송지:</label>
+                <div id="deliveryAddress" class="readonly-field"></div>
+            </div>
+            <div class="input-group">
+                <label for="detailAddress">상세 주소:</label>
+                <div id="detailAddress" class="readonly-field"></div>
+            </div>            
+            <div class="input-group">
+                <label for="productName">제품명:</label>
+                <div id="productName" class="readonly-field"></div>
+            </div>
+            <div class="input-group">
+                <label for="deliveryMessage">배송 메시지:</label>
+                <textarea id="deliveryMessage" placeholder="Delivery Message"></textarea>
+            </div>
+            <button type="button" onclick="createOrder()">주문하기</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const buyerAddress = urlParams.get('buyerAddress');
+            const productId = urlParams.get('productId');
+            
+            fetch(`/api/get-buyer-info?address=${buyerAddress}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('customerName').textContent = data.name;
+                    document.getElementById('customerPhone').textContent = data.phone;
+                    document.getElementById('deliveryAddress').textContent = data.address;
+                    document.getElementById('detailAddress').textContent = data.detailaddress; // 상세주소 추가
+                })
+                .catch(error => console.error('Error fetching buyer info:', error));
+
+
+            fetch(`/get-product-details?productId=${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('productName').textContent = data.title;
+                })
+                .catch(error => console.error('Error fetching product details:', error));
+        });
+
+        function createOrder() {
+    const deliveryMessage = document.getElementById('deliveryMessage').value;
+    const urlParams = new URLSearchParams(window.location.search);
+    const buyerAddress = urlParams.get('buyerAddress');
+    const productId = urlParams.get('productId');
+
+    fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: deliveryMessage,
+            buyerAddress: buyerAddress,
+            productId: productId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json(); // 여기에서 서버가 HTML을 반환하면 파싱 에러 발생
+    })
+    .then(data => {
+        if (data.success) {
+            alert('상품이 주문되었습니다.');
+            localStorage.setItem('orderCreated', 'true');
+        } else {
+            throw new Error('Order failed');
+        }
+    })
+    .catch(error => {
+        console.error('Order failed:', error);
+        alert(`주문 생성에 실패하였습니다: ${error.message}`);
+    });
+}
+
+    </script>
+</body>
+</html>
