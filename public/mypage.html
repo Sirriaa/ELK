@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: multiply;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 18px;
+            color: #555;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"], input[type="number"],
+        textarea, input[type="file"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus,
+        textarea:focus, input[type="file"]:focus {
+            border-color: #ff8a3d;
+            outline: none;
+        }
+
+        button[type="submit"] {
+            padding: 12px 20px;
+            font-size: 18px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .back-link {
+            font-size: 16px;
+            color: #000000;
+            text-decoration: none;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        #image-preview-img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <h2>글쓰기</h2>
+        <form id="postForm" enctype="multipart/form-data">
+            <input type="hidden" id="postId" name="postId" value="">
+            <label>제목</label>
+            <input type="text" id="title" name="title" placeholder="제목">
+        
+            <label>내용</label>
+            <textarea id="content" name="content" placeholder="내용" rows="6"></textarea>
+        
+            <label>닉네임</label>
+            <input type="text" id="nickname" name="nickname" placeholder="닉네임">
+        
+            <label>판매가격 (원)</label>
+            <input type="number" id="price" name="price" placeholder="판매가격" onkeyup="calculateFRC()">
+            <small id="frcDisplay">0 FRC</small>
+        
+            <label>이미지 업로드</label>
+            <input type="file" id="image" name="image" accept="image/*" style="cursor: pointer;">
+            <div id="image-preview">
+                <img id="image-preview-img" src="#" alt="이미지 미리보기" style="display: none;">
+            </div>
+        
+            <button type="submit">등록</button>
+        </form>
+        
+        
+    </div>
+
+    <script>
+        function calculateFRC() {
+            const price = parseFloat(document.getElementById('price').value);
+            const frcCoins = price / 1000;
+            document.getElementById('frcDisplay').textContent = `${frcCoins.toFixed(2)} FRC`;
+        }
+
+        document.getElementById('image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const image = document.getElementById('image-preview-img');
+                image.src = e.target.result;
+                image.style.display = 'block';  // Make sure the image is visible
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('postForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const postId = document.getElementById('postId').value;
+            const url = postId ? `/products/${postId}` : '/products';
+            const method = postId ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (window.opener && window.opener.document) {
+                        const productList = window.opener.document.getElementById('product-list');
+                        if (productList) {
+                            const productHtml = `
+                                <div class="product-item">
+                                    <div class="product-info">
+                                        <h3>${formData.get('title')} - ${formData.get('nickname')}</h3>
+                                        <p>${formData.get('content')}</p>
+                                        <p>가격: ${formData.get('price')}</p>
+                                    </div>
+                                    <img src="${result.imageUrl}" alt="${formData.get('title')}" class="product-image">
+                                </div>
+                            `;
+                            productList.innerHTML += productHtml;
+                            alert('상품이 성공적으로 등록되었습니다.');
+                            window.close(); // 선택적으로 창을 닫습니다
+                        } else {
+                            alert('상품 목록을 찾을 수 없습니다. 부모 페이지를 확인하세요.');
+                        }
+                    } else {
+                        alert('등록 페이지는 다른 페이지에서 열려야 합니다. 부모 창이 존재하지 않습니다.');
+                    }
+                } else {
+                    throw new Error(result.message || '상품 등록에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('상품 등록 실패:', error);
+                alert(error.message);
+            }
+        });
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('postId');
+            if (postId) {
+                document.getElementById('postId').value = postId;
+                document.getElementById('title').value = urlParams.get('title');
+                document.getElementById('content').value = urlParams.get('content');
+                document.getElementById('nickname').value = urlParams.get('nickname');
+                document.getElementById('price').value = urlParams.get('price');
+                const imageUrl = urlParams.get('image_url');
+                if (imageUrl) {
+                    const imagePreviewImg = document.getElementById('image-preview-img');
+                    imagePreviewImg.src = imageUrl;
+                    imagePreviewImg.style.display = 'block';
+                }
+            }
+        };
+    </script>
+</body>
+</html>
+
+
+  <!-- 추가할 새 스크립트 -->
+  <script>
+    window.onload = function() {
+        fetch('/products')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data); // 콘솔에 로드된 데이터를 출력
+            // 여기에 데이터를 DOM에 추가하는 로직을 구현할 수 있습니다.
+        })
+        .catch(error => console.error('Error loading products:', error));
+    };
+</script>
+
