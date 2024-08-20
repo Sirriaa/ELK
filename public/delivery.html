@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배송추적</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+</head>
+<body onload="document.getElementById('trackingForm').submit()">
+    <div class="container">
+        <h2>배송추적</h2>
+        <form id="trackingForm" action="https://info.sweettracker.co.kr/tracking/5" method="post">
+            <input type="hidden" name="t_key" value="MDIsM1LpDrh9XftHXFOhGw">
+            <input type="hidden" name="t_code" value="01">
+            <input type="hidden" name="t_invoice" value="6670901092667">
+        </form>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
