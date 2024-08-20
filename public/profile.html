@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="user-info">
+            <div class="profile-pic">
+                <img src="default-profile.png" alt="Profile Image" id="profileImage">
+            </div>
+            <div class="user-details">
+                <h3 id="userName">Name: </h3>
+                <p id="userAddress">Address: </p>
+                <p id="userDetailAddress">Detail Address: </p>
+                <p id="userPhone">Phone: </p>
+            </div>
+        </div>
+        <div class="transaction-requests">
+            <h2>Transaction Requests</h2>
+            <ul id="transactionList">
+                <!-- Transaction requests will be loaded here -->
+            </ul>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchUserData();
+        loadTransactionRequests(); // 거래 요청 목록을 로드하는 함수 호출
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/user-profile');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                const userData = await response.json();
+                updateProfilePage(userData);
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+            function updateProfilePage(userData) {
+        document.getElementById('userName').textContent = `Name: ${userData.name}`;
+        document.getElementById('userAddress').textContent = `Address: ${userData.address}`;
+        document.getElementById('userDetailAddress').textContent = `Detail Address: ${userData.detailaddress}`; // 상세주소 추가
+        document.getElementById('userPhone').textContent = `Phone: ${userData.phone}`;
+    }
+
+
+        async function loadTransactionRequests() {
+            try {
+                const response = await fetch('/api/get-transaction-requests');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch transaction requests');
+                }
+                const transactionRequests = await response.json();
+                updateTransactionList(transactionRequests);
+            } catch (error) {
+                console.error('Error loading transaction requests:', error);
+            }
+        }
+
+        function updateTransactionList(transactionRequests) {
+            const transactionList = document.getElementById('transactionList');
+            transactionList.innerHTML = ''; // Clear the list first
+
+            transactionRequests.forEach(request => {
+                const listItem = document.createElement('li');
+                listItem.id = `transaction-${request.id}`; // 아이템에 id 추가
+                listItem.innerHTML = `
+                    <span>Product ID: ${request.product_id}</span>
+                    <span>Buyer: ${request.buyer_address}</span>
+                    <span>Status: ${request.status}</span>
+                    <button class="accept-button" data-transaction-id="${request.id}" data-product-id="${request.product_id}" data-buyer-address="${request.buyer_address}">Accept</button>
+                    <button class="reject-button" data-transaction-id="${request.id}">Reject</button>
+                    <button class="delete-button" data-transaction-id="${request.id}">X</button>
+                `;
+                transactionList.appendChild(listItem);
+            });
+
+            document.querySelectorAll('.accept-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    const transactionId = this.getAttribute('data-transaction-id');
+                    const productId = this.getAttribute('data-product-id');
+                    const buyerAddress = this.getAttribute('data-buyer-address');
+                    handleTransaction('accept', transactionId, productId, buyerAddress);
+                });
+            });
+
+            document.querySelectorAll('.reject-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    const transactionId = this.getAttribute('data-transaction-id');
+                    handleTransaction('reject', transactionId);
+                });
+            });
+
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    const transactionId = this.getAttribute('data-transaction-id');
+                    deleteTransaction(transactionId);
+                });
+            });
+        }
+
+        async function handleTransaction(action, transactionId, productId = null, buyerAddress = null) {
+            const url = action === 'accept' 
+                ? `/api/accept-transaction/${transactionId}` 
+                : `/api/reject-transaction/${transactionId}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to ${action} transaction`);
+                }
+
+                alert(`Transaction ${action}ed successfully`);
+                
+                if (action === 'reject') {
+                    document.getElementById(`transaction-${transactionId}`).remove(); // 목록에서 제거
+                } else {
+                    window.location.href = `seller.html?productId=${productId}&buyerAddress=${buyerAddress}`;
+                }
+            } catch (error) {
+                console.error(`Error ${action}ing transaction:`, error);
+                alert(`Error ${action}ing transaction: ${error.message}`);
+            }
+        }
+
+        async function deleteTransaction(transactionId) {
+            try {
+                const response = await fetch(`/api/delete-transaction/${transactionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete transaction');
+                }
+
+                alert('Transaction deleted successfully');
+                document.getElementById(`transaction-${transactionId}`).remove(); // 목록에서 제거
+            } catch (error) {
+                console.error('Error deleting transaction:', error);
+                alert('Error deleting transaction: ' + error.message);
+            }
+        }
+    });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
